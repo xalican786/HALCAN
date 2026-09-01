@@ -10,52 +10,53 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --void:#010108;--base:#06060F;--card:#0A0A1A;--raised:#0F0F22;
-  --blue:#00D4FF;--blue2:#0099CC;--emerald:#00FF88;--gold:#C9A84C;
-  --crimson:#FF2244;--amber:#FFB800;--violet:#9B59F5;
+  --blue:#00D4FF;--blue2:#0099CC;--emerald:#00FF88;
+  --gold:#C9A84C;--crimson:#FF2244;--amber:#FFB800;--violet:#9B59F5;
   --text:#E8F4FF;--text2:#5A7A9A;--text3:#1A3A5A;
   --glow-b:0 0 20px rgba(0,212,255,0.5),0 0 60px rgba(0,212,255,0.2);
-  --border:1px solid rgba(0,212,255,0.07);--r:6px;
-  --F-title:'Orbitron',monospace;--F-num:'Rajdhani',sans-serif;
-  --F-mono:'Share Tech Mono',monospace;--F-ui:'Exo 2',sans-serif;
+  --border:1px solid rgba(0,212,255,0.07);--r:6px;--rail:180px;
 }
-html,body{height:100%;background:var(--void);color:var(--text);font-family:var(--F-ui);font-size:12px;overflow-x:hidden}
+html,body{height:100%;background:var(--void);color:var(--text);font-family:'Exo 2',sans-serif;font-size:12px;overflow:hidden}
 ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:var(--blue2);border-radius:2px}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:linear-gradient(rgba(0,212,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.02) 1px,transparent 1px);
-  background-size:48px 48px;animation:grid 28s linear infinite}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,212,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.02) 1px,transparent 1px);background-size:48px 48px;animation:grid 28s linear infinite}
 @keyframes grid{0%{background-position:0 0}100%{background-position:48px 48px}}
-body::after{content:'';position:fixed;left:0;right:0;height:2px;pointer-events:none;z-index:1;
-  background:linear-gradient(transparent,rgba(0,212,255,0.05),transparent);animation:scan 10s linear infinite}
+body::after{content:'';position:fixed;left:0;right:0;height:2px;pointer-events:none;z-index:1;background:linear-gradient(transparent,rgba(0,212,255,0.05),transparent);animation:scan 10s linear infinite}
 @keyframes scan{0%{top:-2px}100%{top:100vh}}
-#app{position:relative;z-index:2;padding:16px;max-width:1400px;margin:0 auto}
-.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:var(--border)}
-.logo{font-family:var(--F-title);font-size:20px;font-weight:900;letter-spacing:4px;color:var(--blue);text-shadow:var(--glow-b)}
-.logo-sub{font-size:8px;letter-spacing:3px;color:var(--text2);margin-top:2px}
-.ws-row{display:flex;align-items:center;gap:8px}
-#ws-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);transition:.3s}
+#app{position:relative;z-index:2;display:flex;height:100vh}
+#rail{width:var(--rail);background:var(--base);border-right:var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.rail-top{padding:16px 14px 12px;border-bottom:var(--border)}
+.rail-logo{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;letter-spacing:3px;color:var(--blue);text-shadow:var(--glow-b)}
+.rail-sub{font-size:7px;letter-spacing:2px;color:var(--text2);margin-top:3px;font-family:'Share Tech Mono',monospace}
+.rail-ws{display:flex;align-items:center;gap:6px;padding:7px 14px;border-bottom:var(--border)}
+#ws-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:.3s}
 #ws-dot.live{background:var(--emerald);box-shadow:0 0 10px rgba(0,255,136,0.5);animation:pulse 2s infinite}
 #ws-dot.dead{background:var(--crimson);animation:blink .8s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 6px rgba(0,255,136,0.5)}50%{box-shadow:0 0 20px rgba(0,255,136,0.8)}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.ws-lbl{font-size:8px;letter-spacing:2px;color:var(--text2)}
+#ws-lbl{font-size:7px;letter-spacing:2px;color:var(--text2);font-family:'Share Tech Mono',monospace}
+.tab-btn{display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;border:none;background:none;color:var(--text2);font-family:'Exo 2',sans-serif;font-size:10px;text-align:left;width:100%;transition:.15s;border-left:2px solid transparent}
+.tab-btn:hover{color:var(--text);background:rgba(0,212,255,0.03)}
+.tab-btn.active{color:var(--blue);background:rgba(0,212,255,0.05);border-left-color:var(--blue)}
+.tab-btn .ti{font-size:10px;width:14px;text-align:center;flex-shrink:0}
+.rail-rev{padding:10px 14px;margin-top:auto;border-top:var(--border)}
+.rail-rev-label{font-size:7px;letter-spacing:2px;color:var(--text2);margin-bottom:4px;font-family:'Share Tech Mono',monospace}
+.rail-rev-value{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--blue)}
+#content{flex:1;overflow:hidden;position:relative}
+.panel{position:absolute;inset:0;overflow-y:auto;padding:16px;display:none}
+.panel.on{display:block}
+.card{background:var(--card);border:var(--border);border-radius:var(--r);padding:14px;position:relative;overflow:hidden;margin-bottom:10px}
+.card::before{content:'';position:absolute;top:0;left:-200%;right:-200%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.2),transparent);animation:line 5s linear infinite}
+@keyframes line{0%{left:-200%;right:200%}100%{left:200%;right:-200%}}
+.ct{font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:3px;color:var(--text2);margin-bottom:9px}
+.mv{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:var(--blue);line-height:1}
+.ms{font-size:9px;color:var(--text2);margin-top:3px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
-.mb{margin-bottom:10px}
-.card{background:var(--card);border:var(--border);border-radius:var(--r);padding:14px;position:relative;overflow:hidden}
-.card::before{content:'';position:absolute;top:0;left:-200%;right:-200%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.2),transparent);animation:line 5s linear infinite}
-@keyframes line{0%{left:-200%;right:200%}100%{left:200%;right:-200%}}
-.ct{font-size:7px;letter-spacing:3px;color:var(--text2);margin-bottom:8px;font-family:var(--F-mono)}
-.mv{font-family:var(--F-num);font-size:28px;font-weight:700;color:var(--blue);line-height:1}
-.mv-gold{color:var(--gold)}
-.mv-green{color:var(--emerald)}
-.mv-sm{font-size:14px}
-.ms{font-size:9px;color:var(--text2);margin-top:3px}
 .ir{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.02);font-size:10px}
 .ir:last-child{border-bottom:none}
 .ik{color:var(--text2)}
-.iv{color:var(--blue);font-family:var(--F-mono);font-size:9px}
+.iv{color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:9px}
 .iv-g{color:var(--emerald)}
 .iv-r{color:var(--crimson)}
 .iv-a{color:var(--amber)}
@@ -63,184 +64,294 @@ body::after{content:'';position:fixed;left:0;right:0;height:2px;pointer-events:n
 .prog{height:4px;background:var(--raised);border-radius:2px;overflow:hidden;margin:8px 0}
 .prog-f{height:100%;border-radius:2px;transition:width 1s ease}
 .prog-blue{background:linear-gradient(90deg,var(--blue2),var(--blue));box-shadow:0 0 6px rgba(0,212,255,0.4)}
-.prog-gold{background:linear-gradient(90deg,#A8893D,var(--gold))}
-.prog-green{background:linear-gradient(90deg,#00AA66,var(--emerald))}
-.prop-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
-.prop-btn{padding:8px 4px;text-align:center;border-radius:4px;cursor:pointer;border:1px solid rgba(0,212,255,0.15);background:var(--raised);color:var(--text2);transition:.2s;font-family:var(--F-mono);font-size:8px}
-.prop-btn:hover{border-color:var(--blue);color:var(--blue);background:rgba(0,212,255,0.05)}
-.prop-btn.active{border-color:var(--blue);color:var(--blue);background:rgba(0,212,255,0.1);box-shadow:var(--glow-b)}
-.chain-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:10px;font-size:8px;letter-spacing:2px}
+.prop-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.prop-btn{padding:8px 4px;text-align:center;border-radius:4px;cursor:pointer;border:1px solid rgba(0,212,255,0.1);background:var(--raised);color:var(--text2);transition:.2s;font-family:'Share Tech Mono',monospace;font-size:8px}
+.prop-btn:hover{border-color:var(--blue);color:var(--blue)}
+.prop-btn.active{border-color:var(--blue);color:var(--blue);background:rgba(0,212,255,0.08);box-shadow:var(--glow-b)}
+.chain-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:10px;font-size:8px;letter-spacing:2px}
 .chain-on{background:rgba(0,255,136,0.07);border:1px solid rgba(0,255,136,0.2);color:var(--emerald)}
 .chain-off{background:rgba(255,34,68,0.07);border:1px solid rgba(255,34,68,0.2);color:var(--crimson)}
-.flash-bar{display:flex;gap:4px;align-items:center;margin-top:8px}
-.flash-seg{height:8px;border-radius:2px}
-.flash-b{background:var(--blue);flex:26}
-.flash-a{background:var(--violet);flex:44}
-.log-feed{font-family:var(--F-mono);font-size:9px;line-height:1.8;overflow-y:auto;max-height:200px;background:var(--void);border:var(--border);border-radius:4px;padding:8px;margin-top:8px}
-.hero-num{font-family:var(--F-title);font-size:clamp(24px,4vw,48px);font-weight:900;color:var(--blue);text-shadow:var(--glow-b);text-align:center;animation:blue-pulse 3s ease-in-out infinite}
+.log-feed{font-family:'Share Tech Mono',monospace;font-size:9px;line-height:1.8;overflow-y:auto;max-height:240px;background:var(--void);border:var(--border);border-radius:4px;padding:8px}
+.fg{margin-bottom:9px}
+.fg label{display:block;font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:2px;color:var(--text2);margin-bottom:4px}
+.fi{width:100%;background:var(--raised);border:var(--border);color:var(--text);padding:9px 11px;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;transition:.2s}
+.fi:focus{border-color:rgba(0,212,255,0.4);box-shadow:0 0 0 1px rgba(0,212,255,0.15)}
+select.fi option{background:var(--raised)}
+.btn{width:100%;padding:10px;border-radius:4px;cursor:pointer;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;transition:.2s;border:1px solid;margin-top:4px}
+.btn-blue{background:rgba(0,212,255,0.05);border-color:var(--blue);color:var(--blue)}
+.btn-blue:hover{background:rgba(0,212,255,0.12);box-shadow:var(--glow-b)}
+.btn-gold{background:rgba(201,168,76,0.05);border-color:var(--gold);color:var(--gold)}
+.btn-gold:hover{background:rgba(201,168,76,0.12)}
+.res-box{margin-top:8px;padding:8px;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:9px;display:none}
+.res-ok{background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.2);color:var(--emerald)}
+.res-err{background:rgba(255,34,68,0.05);border:1px solid rgba(255,34,68,0.2);color:var(--crimson)}
+.hero{font-family:'Orbitron',monospace;font-size:clamp(20px,3vw,36px);font-weight:900;color:var(--blue);text-shadow:var(--glow-b);text-align:center;animation:blue-pulse 3s ease-in-out infinite}
 @keyframes blue-pulse{0%,100%{text-shadow:var(--glow-b)}50%{text-shadow:0 0 50px rgba(0,212,255,1),0 0 100px rgba(0,212,255,0.4)}}
+.flash-bar{display:flex;gap:0;margin-top:8px;border-radius:4px;overflow:hidden;height:10px}
+.flash-seg-b{background:var(--blue);flex:26}
+.flash-seg-a{background:var(--violet);flex:44}
+.type-row{display:flex;gap:5px;margin-bottom:9px}
+.ttype{flex:1;padding:7px;background:var(--raised);border:var(--border);color:var(--text2);border-radius:4px;cursor:pointer;font-family:'Exo 2',sans-serif;font-size:9px;text-align:center;transition:.15s}
+.ttype:hover,.ttype.on{background:rgba(0,212,255,0.07);color:var(--blue);border-color:rgba(0,212,255,0.3)}
+.tf{display:none}.tf.on{display:block}
+.ftw-box{background:rgba(0,212,255,0.03);border:1px solid rgba(0,212,255,0.1);border-radius:var(--r);padding:12px;margin-bottom:9px;font-size:9px;color:var(--text2);line-height:1.8}
 </style>
 </head>
 <body>
 <div id="app">
 
-<!-- HEADER -->
-<div class="header">
-  <div>
-    <div class="logo">HALCAN</div>
-    <div class="logo-sub">Flash Principal Extraction System — $70B — $7B/cycle</div>
+<!-- RAIL -->
+<div id="rail">
+  <div class="rail-top">
+    <div class="rail-logo">HALCAN</div>
+    <div class="rail-sub">Flash Principal Extraction</div>
   </div>
-  <div class="ws-row">
+  <div class="rail-ws">
     <div id="ws-dot"></div>
-    <span class="ws-lbl" id="ws-lbl">CONNECTING</span>
+    <span id="ws-lbl">CONNECTING</span>
+  </div>
+  <button class="tab-btn active" onclick="tab('overview',this)"><span class="ti">◈</span>OVERVIEW</button>
+  <button class="tab-btn" onclick="tab('propeller',this)"><span class="ti">▣</span>PROPELLER</button>
+  <button class="tab-btn" onclick="tab('chains',this)"><span class="ti">◎</span>CHAINS</button>
+  <button class="tab-btn" onclick="tab('ftw',this)"><span class="ti">◆</span>FTW</button>
+  <button class="tab-btn" onclick="tab('system',this)"><span class="ti">▤</span>SYSTEM</button>
+  <!-- Revenue in rail footer -->
+  <div class="rail-rev">
+    <div class="rail-rev-label">REV TODAY</div>
+    <div class="rail-rev-value" id="rail-rev">$0</div>
   </div>
 </div>
 
-<!-- HERO ROW -->
-<div class="g3 mb">
-  <div class="card" style="text-align:center;padding:20px 14px">
-    <div class="ct">REVENUE TODAY</div>
-    <div class="hero-num" id="rev-today">$0</div>
-    <div style="font-size:8px;color:var(--text2);margin-top:4px">cumulative flash extraction</div>
-  </div>
-  <div class="card" style="text-align:center;padding:20px 14px">
-    <div class="ct">CYCLES TODAY</div>
-    <div class="hero-num" id="cycles-today" style="color:var(--emerald);text-shadow:0 0 20px rgba(0,255,136,0.5)">0</div>
-    <div style="font-size:8px;color:var(--text2);margin-top:4px">of 1,700,000 max</div>
-  </div>
-  <div class="card" style="text-align:center;padding:20px 14px">
-    <div class="ct">PER CYCLE</div>
-    <div class="hero-num" id="per-cycle" style="color:var(--gold);text-shadow:0 0 20px rgba(201,168,76,0.5)">$7B</div>
-    <div style="font-size:8px;color:var(--text2);margin-top:4px">target extraction</div>
-  </div>
-</div>
+<!-- CONTENT -->
+<div id="content">
 
-<!-- FLASH CAPACITY -->
-<div class="card mb">
-  <div class="ct">FLASH LOAN CAPACITY — LIVE</div>
+<!-- 1. OVERVIEW -->
+<div id="p-overview" class="panel on">
   <div class="g3">
-    <div>
-      <div style="font-size:8px;color:var(--blue);letter-spacing:2px;margin-bottom:4px">BALANCER V2 (0% FEE)</div>
-      <div style="font-family:var(--F-num);font-size:22px;font-weight:700;color:var(--blue)" id="balancer-cap">$26B</div>
+    <div class="card" style="text-align:center;padding:20px 14px">
+      <div class="ct">REVENUE TODAY</div>
+      <div class="hero" id="ov-rev">$0</div>
+      <div style="font-size:8px;color:var(--text2);margin-top:4px">flash extraction</div>
     </div>
-    <div>
-      <div style="font-size:8px;color:var(--violet);letter-spacing:2px;margin-bottom:4px">AAVE V3 (0.05% FEE)</div>
-      <div style="font-family:var(--F-num);font-size:22px;font-weight:700;color:var(--violet)" id="aave-cap">$44B</div>
+    <div class="card" style="text-align:center;padding:20px 14px">
+      <div class="ct">CYCLES TODAY</div>
+      <div class="hero" id="ov-cycles" style="color:var(--emerald);text-shadow:0 0 20px rgba(0,255,136,0.4)">0</div>
+      <div style="font-size:8px;color:var(--text2);margin-top:4px">of 1,700,000 max</div>
     </div>
-    <div>
-      <div style="font-size:8px;color:var(--emerald);letter-spacing:2px;margin-bottom:4px">TOTAL COMBINED</div>
-      <div style="font-family:var(--F-num);font-size:22px;font-weight:700;color:var(--emerald)" id="total-flash">$70B</div>
+    <div class="card" style="text-align:center;padding:20px 14px">
+      <div class="ct">PER CYCLE</div>
+      <div class="hero" id="ov-per" style="color:var(--gold);text-shadow:0 0 20px rgba(201,168,76,0.4)">$7B</div>
+      <div style="font-size:8px;color:var(--text2);margin-top:4px">target extraction</div>
     </div>
   </div>
-  <div class="flash-bar">
-    <div class="flash-seg flash-b" style="border-radius:2px 0 0 2px"></div>
-    <div class="flash-seg flash-a" style="border-radius:0 2px 2px 0"></div>
-  </div>
-  <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text2);margin-top:4px;font-family:var(--F-mono)">
-    <span>Balancer $26B (37%)</span>
-    <span>Aave $44B (63%)</span>
-  </div>
-</div>
 
-<!-- PROPELLER -->
-<div class="card mb">
-  <div class="ct">PROPELLER — DAILY TARGET</div>
-  <div class="g2">
-    <div>
-      <div style="font-family:var(--F-num);font-size:18px;color:var(--blue)">
-        Active: <span id="prop-active">P1</span> — <span id="prop-target">$100B/day</span>
+  <div class="card">
+    <div class="ct">FLASH LOAN CAPACITY — $70B TOTAL</div>
+    <div class="g2" style="margin-bottom:10px">
+      <div>
+        <div style="font-size:8px;color:var(--blue);letter-spacing:2px;margin-bottom:3px;font-family:'Share Tech Mono',monospace">BALANCER V2 — 0% FEE</div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--blue)" id="ov-balancer">$26B</div>
       </div>
-      <div style="font-size:9px;color:var(--text2);margin-top:4px">
-        Cycles needed: <span id="cycles-needed">15</span>
+      <div>
+        <div style="font-size:8px;color:var(--violet);letter-spacing:2px;margin-bottom:3px;font-family:'Share Tech Mono',monospace">AAVE V3 — 0.05% FEE</div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--violet)" id="ov-aave">$44B</div>
       </div>
     </div>
-    <div>
-      <div class="prog"><div class="prog-f prog-blue" id="prop-prog" style="width:0%"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text2);font-family:var(--F-mono)">
-        <span id="prog-label-left">$0</span>
-        <span id="prog-label-right">$100B</span>
-      </div>
+    <div class="flash-bar">
+      <div class="flash-seg-b"></div>
+      <div class="flash-seg-a"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text2);margin-top:4px;font-family:'Share Tech Mono',monospace">
+      <span>Balancer $26B (37%)</span>
+      <span>Aave $44B (63%)</span>
     </div>
   </div>
-  <div class="prop-grid" id="prop-grid">
-    <!-- Rendered by JS -->
-  </div>
-</div>
 
-<!-- STATS ROW -->
-<div class="g4 mb">
-  <div class="card"><div class="ct">NET TODAY</div><div class="mv mv-green" id="net-today">$0</div><div class="ms">after Aave fees</div></div>
-  <div class="card"><div class="ct">AAVE FEES</div><div class="mv" style="font-size:18px;color:var(--violet)" id="aave-fee">$0</div><div class="ms">0.05% on $44B</div></div>
-  <div class="card"><div class="ct">PEAK CYCLE</div><div class="mv mv-gold" id="peak-cycle">$0</div></div>
-  <div class="card"><div class="ct">AVG CYCLE</div><div class="mv" style="font-size:18px" id="avg-cycle">$0</div></div>
-</div>
-
-<!-- VELOCITY -->
-<div class="card mb">
-  <div class="ct">REVENUE VELOCITY</div>
   <div class="g4">
-    <div class="ir"><span class="ik">Per second</span><span class="iv" id="vel-sec">$0</span></div>
-    <div class="ir"><span class="ik">Per minute</span><span class="iv" id="vel-min">$0</span></div>
-    <div class="ir"><span class="ik">Per hour</span><span class="iv" id="vel-hr">$0</span></div>
-    <div class="ir"><span class="ik">Per day (proj)</span><span class="iv" id="vel-day">$0</span></div>
+    <div class="card"><div class="ct">NET TODAY</div><div class="mv" style="color:var(--emerald)" id="ov-net">$0</div><div class="ms">after Aave fees</div></div>
+    <div class="card"><div class="ct">AAVE FEES</div><div class="mv" style="color:var(--violet);font-size:18px" id="ov-fee">$0</div><div class="ms">0.05% on $44B</div></div>
+    <div class="card"><div class="ct">PEAK CYCLE</div><div class="mv" style="color:var(--gold)" id="ov-peak">$0</div></div>
+    <div class="card"><div class="ct">ALL-TIME REV</div><div class="mv" style="font-size:18px" id="ov-total">$0</div></div>
   </div>
-</div>
 
-<!-- CHAINS + GAS -->
-<div class="g2 mb">
   <div class="card">
-    <div class="ct">CHAIN STATUS</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-      <div id="chain-polygon" class="chain-pill chain-off">POLYGON</div>
-      <div id="chain-arb" class="chain-pill chain-off">ARBITRUM</div>
+    <div class="ct">REVENUE VELOCITY</div>
+    <div class="g4">
+      <div class="ir"><span class="ik">Per second</span><span class="iv" id="vel-sec">$0</span></div>
+      <div class="ir"><span class="ik">Per minute</span><span class="iv" id="vel-min">$0</span></div>
+      <div class="ir"><span class="ik">Per hour</span><span class="iv" id="vel-hr">$0</span></div>
+      <div class="ir"><span class="ik">Projected/day</span><span class="iv" id="vel-day">$0</span></div>
     </div>
-    <div class="ir"><span class="ik">Total connected</span><span class="iv" id="chain-count">0</span></div>
-    <div class="ir"><span class="ik">Swaps detected today</span><span class="iv" id="natural-today">0</span></div>
   </div>
+
   <div class="card">
-    <div class="ct">GAS + EXECUTION</div>
-    <div class="ir"><span class="ik">Gas price</span><span class="iv" id="gas-price">0 gwei</span></div>
-    <div class="ir"><span class="ik">Gas cap</span><span class="iv">100 gwei</span></div>
-    <div class="ir"><span class="ik">Execution status</span><span class="iv" id="gas-ok">—</span></div>
-    <div class="ir"><span class="ik">Executed today</span><span class="iv" id="exec-today">0</span></div>
-    <div class="ir"><span class="ik">Success / Fail</span><span class="iv" id="success-fail">0 / 0</span></div>
+    <div class="ct">CYCLE LOG — LAST 10</div>
+    <div class="log-feed" id="ov-cycle-log">Waiting for first cycle...</div>
   </div>
 </div>
 
-<!-- CONTRACTS + SYSTEM -->
-<div class="g2 mb">
+<!-- 2. PROPELLER -->
+<div id="p-propeller" class="panel">
   <div class="card">
-    <div class="ct">CONTRACTS</div>
-    <div class="ir"><span class="ik">Halcan</span><span class="iv" id="addr-halcan">deploying...</span></div>
-    <div class="ir"><span class="ik">HalcanFlash</span><span class="iv" id="addr-flash">—</span></div>
-    <div class="ir"><span class="ik">HalcanVault</span><span class="iv" id="addr-vault">—</span></div>
-    <div class="ir"><span class="ik">HalcanSplitter</span><span class="iv" id="addr-splitter">—</span></div>
-    <div class="ir"><span class="ik">HalcanRegistry</span><span class="iv" id="addr-registry">—</span></div>
-    <div class="ir"><span class="ik">Status</span><span class="iv" id="deploy-status">—</span></div>
+    <div class="ct">ACTIVE PROPELLER</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;color:var(--blue)" id="prop-big">P1</div>
+    <div style="font-size:10px;color:var(--text2);margin-top:4px">Target: <span id="prop-target-big">$100B/day</span></div>
+    <div style="font-size:10px;color:var(--text2);margin-top:2px">Cycles needed: <span id="prop-cycles-big" style="color:var(--blue)">15</span></div>
+    <div class="prog"><div class="prog-f prog-blue" id="prop-prog" style="width:0%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text2);font-family:'Share Tech Mono',monospace">
+      <span id="prop-prog-l">$0</span><span id="prop-prog-r">$100B</span>
+    </div>
   </div>
+
   <div class="card">
-    <div class="ct">SYSTEM</div>
-    <div class="ir"><span class="ik">Version</span><span class="iv">1.0.0</span></div>
-    <div class="ir"><span class="ik">Executor</span><span class="iv" id="executor-addr">—</span></div>
-    <div class="ir"><span class="ik">Treasury</span><span class="iv" style="color:var(--text3)">CLASSIFIED</span></div>
-    <div class="ir"><span class="ik">Uptime</span><span class="iv" id="uptime">0s</span></div>
-    <div class="ir"><span class="ik">Memory</span><span class="iv" id="mem">0MB</span></div>
-    <div class="ir"><span class="ik">WS clients</span><span class="iv" id="ws-clients">0</span></div>
-    <div class="ir"><span class="ik">All-time cycles</span><span class="iv" id="cycles-total">0</span></div>
-    <div class="ir"><span class="ik">All-time revenue</span><span class="iv" id="rev-total">$0</span></div>
+    <div class="ct">SELECT PROPELLER LEVEL</div>
+    <div class="prop-grid" id="prop-grid">
+      <!-- rendered by JS -->
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">PROPELLER TABLE</div>
+    <div id="prop-table">
+      <!-- rendered by JS -->
+    </div>
   </div>
 </div>
 
-<!-- CYCLE LOG -->
-<div class="card">
-  <div class="ct">CYCLE LOG — LAST 20</div>
-  <div class="log-feed" id="cycle-log">Waiting for first cycle...</div>
+<!-- 3. CHAINS -->
+<div id="p-chains" class="panel">
+  <div class="g2">
+    <div class="card">
+      <div class="ct">CHAIN STATUS</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div id="chain-poly" class="chain-pill chain-off">POLYGON</div>
+        <div id="chain-arb"  class="chain-pill chain-off">ARBITRUM</div>
+      </div>
+      <div class="ir"><span class="ik">Connected</span><span class="iv" id="chain-count">0</span></div>
+      <div class="ir"><span class="ik">Swaps detected</span><span class="iv" id="natural-today">0</span></div>
+      <div class="ir"><span class="ik">Executions today</span><span class="iv" id="exec-today">0</span></div>
+      <div class="ir"><span class="ik">Success</span><span class="iv iv-g" id="success-today">0</span></div>
+      <div class="ir"><span class="ik">Failed</span><span class="iv iv-r" id="fail-today">0</span></div>
+    </div>
+    <div class="card">
+      <div class="ct">GAS MONITOR</div>
+      <div class="ir"><span class="ik">Current gas</span><span class="iv" id="gas-price">0 gwei</span></div>
+      <div class="ir"><span class="ik">Gas cap</span><span class="iv">100 gwei (hardcoded)</span></div>
+      <div class="ir"><span class="ik">Status</span><span class="iv" id="gas-status">—</span></div>
+      <div class="ir"><span class="ik">Markup</span><span class="iv">130% of base</span></div>
+      <div class="ir"><span class="ik">Gas limit</span><span class="iv">3,000,000</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">CHAIN ARCHITECTURE</div>
+    <div class="ir"><span class="ik">Primary</span><span class="iv">Polygon — deepest Balancer + Aave liquidity</span></div>
+    <div class="ir"><span class="ik">Secondary</span><span class="iv">Arbitrum — fallback when Polygon gas high</span></div>
+    <div class="ir"><span class="ik">Flash source</span><span class="iv">Balancer V2 Vault + Aave V3 Pool</span></div>
+    <div class="ir"><span class="ik">Settlement</span><span class="iv">Same block — atomic, no risk</span></div>
+    <div class="ir"><span class="ik">Reverting</span><span class="iv">Full revert if unprofitable — zero loss</span></div>
+  </div>
 </div>
 
+<!-- 4. FTW — USDC PROFIT → FIAT -->
+<div id="p-ftw" class="panel">
+  <div class="ftw-box">
+    Halcan generates USDC profit in the shared treasury from every flash extraction cycle. The FTW tab converts any amount of that USDC to fiat via ModemPay — directly to your mobile money or bank account. Treasury balance is not displayed. Any amount is withdrawable at any time.
+  </div>
+
+  <div class="card">
+    <div class="ct">WITHDRAWAL</div>
+    <div class="type-row">
+      <button class="ttype on" onclick="setFTW('mobile',this)">MOBILE</button>
+      <button class="ttype" onclick="setFTW('bank',this)">BANK</button>
+      <button class="ttype" onclick="setFTW('intl',this)">INTERNATIONAL</button>
+    </div>
+
+    <div class="fg">
+      <label>USDC AMOUNT</label>
+      <input class="fi" id="ftw-amt" type="number" placeholder="100000" oninput="ftwQuote()">
+    </div>
+    <div id="ftw-quote-box" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text2);padding:4px 0 10px">Quote: enter amount above</div>
+
+    <!-- Mobile -->
+    <div id="ftw-mobile" class="tf on">
+      <div class="fg"><label>PHONE NUMBER</label><input class="fi" id="ftw-ph" placeholder="+220 XXXXXXXXX"></div>
+    </div>
+
+    <!-- Bank -->
+    <div id="ftw-bank" class="tf">
+      <div class="g2">
+        <div class="fg"><label>ACCOUNT NAME</label><input class="fi" id="ftw-bn" placeholder="Full name"></div>
+        <div class="fg"><label>ACCOUNT NUMBER</label><input class="fi" id="ftw-bac" placeholder="Account number"></div>
+      </div>
+    </div>
+
+    <!-- International -->
+    <div id="ftw-intl" class="tf">
+      <div class="g2">
+        <div class="fg"><label>ACCOUNT NAME</label><input class="fi" id="ftw-in" placeholder="Full name"></div>
+        <div class="fg"><label>IBAN / ACCOUNT</label><input class="fi" id="ftw-iac" placeholder="IBAN"></div>
+      </div>
+      <div class="fg"><label>SWIFT CODE</label><input class="fi" id="ftw-sw" placeholder="XXXXXX__"></div>
+    </div>
+
+    <button class="btn btn-gold" onclick="doFTW()">WITHDRAW USDC AS FIAT</button>
+    <div id="ftw-res" class="res-box"></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">BRIDGE INFO</div>
+    <div class="ir"><span class="ik">Bridge</span><span class="iv">ModemPay</span></div>
+    <div class="ir"><span class="ik">Mobile (Wave/Afrimoney)</span><span class="iv">1.5% fee</span></div>
+    <div class="ir"><span class="ik">Bank transfer</span><span class="iv">1.25% fee</span></div>
+    <div class="ir"><span class="ik">International (SWIFT)</span><span class="iv">1.25% fee</span></div>
+    <div class="ir"><span class="ik">Treasury USDC source</span><span class="iv" style="color:var(--text3)">CLASSIFIED</span></div>
+    <div class="ir"><span class="ik">Amount limit</span><span class="iv">No limit</span></div>
+    <div class="ir"><span class="ik">Speed</span><span class="iv">Minutes to hours</span></div>
+  </div>
 </div>
+
+<!-- 5. SYSTEM -->
+<div id="p-system" class="panel">
+  <div class="g2">
+    <div class="card">
+      <div class="ct">HALCAN SYSTEM</div>
+      <div class="ir"><span class="ik">Version</span><span class="iv">1.0.0</span></div>
+      <div class="ir"><span class="ik">Executor</span><span class="iv" id="sys-exec">—</span></div>
+      <div class="ir"><span class="ik">Treasury</span><span class="iv" style="color:var(--text3)">CLASSIFIED</span></div>
+      <div class="ir"><span class="ik">Uptime</span><span class="iv" id="sys-uptime">0s</span></div>
+      <div class="ir"><span class="ik">Memory</span><span class="iv" id="sys-mb">0MB</span></div>
+      <div class="ir"><span class="ik">WS clients</span><span class="iv" id="sys-ws">0</span></div>
+    </div>
+    <div class="card">
+      <div class="ct">CONTRACTS</div>
+      <div class="ir"><span class="ik">Halcan</span><span class="iv" id="sc-halcan">deploying...</span></div>
+      <div class="ir"><span class="ik">HalcanFlash</span><span class="iv" id="sc-flash">—</span></div>
+      <div class="ir"><span class="ik">HalcanVault</span><span class="iv" id="sc-vault">—</span></div>
+      <div class="ir"><span class="ik">HalcanSplitter</span><span class="iv" id="sc-splitter">—</span></div>
+      <div class="ir"><span class="ik">HalcanRegistry</span><span class="iv" id="sc-registry">—</span></div>
+      <div class="ir"><span class="ik">Status</span><span class="iv" id="sc-status">awaiting 0.1 POL</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">TOTAL PERFORMANCE</div>
+    <div class="ir"><span class="ik">All-time cycles</span><span class="iv" id="sys-cycles-total">0</span></div>
+    <div class="ir"><span class="ik">All-time revenue</span><span class="iv" id="sys-rev-total">$0</span></div>
+    <div class="ir"><span class="ik">Flash capacity</span><span class="iv">$70B per cycle</span></div>
+    <div class="ir"><span class="ik">Per cycle target</span><span class="iv">$7B (10% of principal)</span></div>
+    <div class="ir"><span class="ik">Balancer fee</span><span class="iv iv-g">0% (zero)</span></div>
+    <div class="ir"><span class="ik">Aave fee</span><span class="iv">0.05% of $44B = $22M</span></div>
+    <div class="ir"><span class="ik">Net per cycle</span><span class="iv iv-g">~$6.978B</span></div>
+    <div class="ir"><span class="ik">Max cycles/day</span><span class="iv">1,700,000</span></div>
+    <div class="ir"><span class="ik">P10 max revenue</span><span class="iv">$11.9 Quadrillion/day</span></div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /app -->
 
 <script>
-let _S={}, _WS=null
+let _S={}, _WS=null, _ftwType='mobile'
+const FEES={wave:.015,afrimoney:.015,bank:.0125,international:.0125}
 
 function connect(){
   const proto=location.protocol==='https:'?'wss':'ws'
@@ -253,114 +364,164 @@ function connect(){
 connect()
 
 function wsOk(ok){
-  const dot=document.getElementById('ws-dot'),lbl=document.getElementById('ws-lbl')
+  const dot=el('ws-dot'),lbl=el('ws-lbl')
   dot.className=ok?'live':'dead'
   lbl.textContent=ok?'LIVE':'RECONNECTING'
+  lbl.style.color=ok?'var(--emerald)':'var(--crimson)'
 }
 
 function render(s){
   _S=s;if(s.booting)return
 
-  set('rev-today',  fmtBig(s.revToday))
-  set('cycles-today',(s.cyclesToday||0).toLocaleString())
-  set('per-cycle',  fmtBig(s.perCycle||7e9))
-  set('net-today',  fmtBig(s.netToday))
-  set('aave-fee',   fmtBig(s.aaveFeeToday))
-  set('peak-cycle', fmtBig(s.peakCycle))
-  set('avg-cycle',  fmtBig(s.avgCycle))
-  set('balancer-cap', '$' + fmt(s.balancerCap/1e9) + 'B')
-  set('aave-cap',     '$' + fmt(s.aaveCap/1e9)     + 'B')
-  set('total-flash',  '$' + fmt(s.flashCap/1e9)    + 'B')
+  // Rail
+  set('rail-rev', fmtB(s.revToday))
+
+  // Overview
+  set('ov-rev',   fmtB(s.revToday))
+  set('ov-cycles',(s.cyclesToday||0).toLocaleString())
+  set('ov-per',   fmtB(s.perCycle||7e9))
+  set('ov-net',   fmtB(s.netToday))
+  set('ov-fee',   fmtB(s.aaveFeeToday))
+  set('ov-peak',  fmtB(s.peakCycle))
+  set('ov-total', fmtB(s.revTotal))
+  set('ov-balancer','$'+Math.floor((s.balancerCap||26e9)/1e9)+'B')
+  set('ov-aave',    '$'+Math.floor((s.aaveCap||44e9)/1e9)+'B')
+
+  // Velocity
+  const v=s.velocity||{}
+  set('vel-sec', fmtB(v.perSecond||0)+'/s')
+  set('vel-min', fmtB(v.perMinute||0)+'/min')
+  set('vel-hr',  fmtB(v.perHour||0)+'/hr')
+  set('vel-day', fmtB(v.perDay||0)+'/day')
 
   // Propeller
-  set('prop-active', s.propeller || 'P1')
-  const tgt = s.dailyTarget || 1e11
-  set('prop-target', fmtBig(tgt) + '/day')
-  set('cycles-needed', (s.cyclesNeeded||0).toLocaleString())
-  const pct = s.progress?.pct || 0
-  el('prop-prog').style.width = pct + '%'
-  set('prog-label-left',  fmtBig(s.revToday||0))
-  set('prog-label-right', fmtBig(tgt))
+  set('prop-big',     s.propeller||'P1')
+  const tgt=s.dailyTarget||1e11
+  set('prop-target-big', fmtB(tgt)+'/day')
+  set('prop-cycles-big', (s.cyclesNeeded||0).toLocaleString())
+  const pct=s.progress?.pct||0
+  el('prop-prog').style.width=pct+'%'
+  set('prop-prog-l', fmtB(s.revToday||0))
+  set('prop-prog-r', fmtB(tgt))
 
-  // Propeller buttons
-  if (s.propellerStats?.length && !el('prop-grid').children.length) {
-    el('prop-grid').innerHTML = s.propellerStats.map(p =>
-      `<div class="prop-btn${p.active?' active':''}" onclick="setProp('${p.level}')" id="pbtn-${p.level}">
-        <div>${p.level}</div>
-        <div style="font-size:7px;margin-top:2px;color:var(--text2)">${p.targetDisplay}</div>
-      </div>`
-    ).join('')
-  } else if (s.propellerStats) {
-    s.propellerStats.forEach(p => {
-      const btn = el('pbtn-' + p.level)
-      if (btn) btn.className = 'prop-btn' + (p.active ? ' active' : '')
+  // Render propeller grid once
+  if(s.propellerStats?.length && !el('prop-grid').children.length){
+    el('prop-grid').innerHTML=s.propellerStats.map(p=>`
+      <div class="prop-btn${p.active?' active':''}" id="pbtn-${p.level}" onclick="setProp('${p.level}')">
+        <div style="font-size:10px;font-weight:700">${p.level}</div>
+        <div style="font-size:6px;margin-top:2px;color:var(--text2)">${p.targetDisplay}</div>
+      </div>`).join('')
+    el('prop-table').innerHTML=s.propellerStats.map(p=>`
+      <div class="ir">
+        <span class="ik">${p.level}</span>
+        <span class="iv">${p.targetDisplay}</span>
+        <span style="font-size:9px;color:var(--text2);font-family:'Share Tech Mono',monospace">${p.cyclesNeeded.toLocaleString()} cycles</span>
+      </div>`).join('')
+  }else if(s.propellerStats){
+    s.propellerStats.forEach(p=>{
+      const btn=el('pbtn-'+p.level)
+      if(btn)btn.className='prop-btn'+(p.active?' active':'')
     })
   }
 
-  // Velocity
-  const v = s.velocity || {}
-  set('vel-sec', fmtBig(v.perSecond||0) + '/s')
-  set('vel-min', fmtBig(v.perMinute||0) + '/min')
-  set('vel-hr',  fmtBig(v.perHour||0)  + '/hr')
-  set('vel-day', fmtBig(v.perDay||0)   + '/day')
-
   // Chains
-  const poly = el('chain-polygon'), arb = el('chain-arb')
-  poly.className = 'chain-pill ' + (s.chainPolygon ? 'chain-on' : 'chain-off')
-  arb.className  = 'chain-pill ' + (s.chainArb     ? 'chain-on' : 'chain-off')
-  set('chain-count',   s.chainCount || 0)
+  el('chain-poly').className='chain-pill '+(s.chainPolygon?'chain-on':'chain-off')
+  el('chain-arb').className ='chain-pill '+(s.chainArb?'chain-on':'chain-off')
+  set('chain-count',   s.chainCount||0)
   set('natural-today', (s.naturalToday||0).toLocaleString())
-
-  // Gas
-  set('gas-price', (s.gasPrice||0).toFixed(1) + ' gwei')
-  const gasOk = el('gas-ok')
-  gasOk.textContent = s.gasOK ? 'ACTIVE' : 'PAUSED (gas high)'
-  gasOk.style.color  = s.gasOK ? 'var(--emerald)' : 'var(--crimson)'
-  set('exec-today',   (s.execToday||0).toLocaleString())
-  set('success-fail', (s.successToday||0) + ' / ' + (s.failToday||0))
+  set('exec-today',    (s.execToday||0).toLocaleString())
+  set('success-today', (s.successToday||0).toLocaleString())
+  set('fail-today',    (s.failToday||0).toLocaleString())
+  set('gas-price', (s.gasPrice||0).toFixed(1)+' gwei')
+  const gs=el('gas-status')
+  gs.textContent=s.gasOK?'ACTIVE — firing':'PAUSED — gas too high'
+  gs.style.color=s.gasOK?'var(--emerald)':'var(--crimson)'
 
   // System
-  set('executor-addr', s.executor ? s.executor.slice(0,14)+'...' : '—')
-  set('uptime', fmtTime(s.uptime))
-  set('mem',    (s.mb||0)+'MB')
-  set('ws-clients', s.wsClients||0)
-  set('cycles-total', (s.cyclesTotal||0).toLocaleString())
-  set('rev-total',    fmtBig(s.revTotal||0))
-  set('deploy-status', s.deployment ? `${s.contracts}/5 deployed` : 'awaiting 0.1 POL')
-  set('addr-halcan', s.halcanAddr ? s.halcanAddr.slice(0,14)+'...' : 'deploying...')
+  set('sys-exec',    s.executor?s.executor.slice(0,14)+'...':'—')
+  set('sys-uptime',  fmtTime(s.uptime))
+  set('sys-mb',      (s.mb||0)+'MB')
+  set('sys-ws',      s.wsClients||0)
+  set('sc-halcan',   s.halcanAddr?s.halcanAddr.slice(0,14)+'...':'deploying...')
+  set('sc-status',   s.deployment?`${s.contracts}/5 deployed`:'awaiting 0.1 POL')
+  set('sys-cycles-total', (s.cyclesTotal||0).toLocaleString())
+  set('sys-rev-total',    fmtB(s.revTotal||0))
 }
 
+// Tab switching
+function tab(name,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'))
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'))
+  const p=el('p-'+name);if(p)p.classList.add('on')
+  btn?.classList.add('active')
+  if(name==='overview')loadCycles()
+}
+
+// Propeller
 async function setProp(level){
-  const r = await fetch('/api/propeller', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({level})})
-  const d = await r.json()
-  if(d.ok) console.log('Propeller set:', level)
+  const r=await fetch('/api/propeller',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({level})})
+  const d=await r.json()
+  if(!d.ok)console.error('Propeller error')
 }
 
-// Load cycle log periodically
+// Cycle log
 async function loadCycles(){
   try{
-    const r = await fetch('/api/cycles')
-    const d = await r.json()
-    const feed = el('cycle-log')
-    if(d.cycles?.length){
-      feed.innerHTML = d.cycles.slice(-20).reverse().map(c=>`
-        <div style="display:flex;gap:8px;border-bottom:1px solid rgba(255,255,255,0.02);padding:2px 0">
-          <span style="color:var(--text2);min-width:80px">${new Date(c.ts).toLocaleTimeString()}</span>
-          <span style="color:var(--blue);flex:1">$${fmt(c.extracted/1e9)}B extracted</span>
-          <span style="color:var(--text2)">${c.txHash?.slice(0,14)||'pending'}...</span>
-        </div>`).join('')
-    }
+    const r=await fetch('/api/cycles')
+    const d=await r.json()
+    const feed=el('ov-cycle-log')
+    if(!d.cycles?.length){feed.innerHTML='<div style="color:var(--text2)">No cycles yet</div>';return}
+    feed.innerHTML=d.cycles.slice(-10).reverse().map(c=>`
+      <div style="display:flex;gap:8px;border-bottom:1px solid rgba(255,255,255,0.02);padding:2px 0">
+        <span style="color:var(--text2);min-width:80px;flex-shrink:0">${new Date(c.ts).toLocaleTimeString()}</span>
+        <span style="color:var(--blue);flex:1">${fmtB(c.extracted)} extracted</span>
+        <span style="color:var(--text2)">${c.txHash?.slice(0,10)||'—'}...</span>
+      </div>`).join('')
   }catch{}
 }
 setInterval(loadCycles, 5_000)
 
+// FTW
+function setFTW(t,btn){
+  document.querySelectorAll('#p-ftw .ttype').forEach(b=>b.classList.remove('on'))
+  btn.classList.add('on');_ftwType=t
+  ;['mobile','bank','intl'].forEach(x=>{const f=el('ftw-'+x);if(f)f.classList.toggle('on',x===t)})
+  ftwQuote()
+}
+
+function ftwQuote(){
+  const amt=parseFloat(el('ftw-amt')?.value)||0
+  if(!amt){set('ftw-quote-box','Quote: enter amount above');return}
+  const rate=FEES[_ftwType==='mobile'?'wave':_ftwType==='bank'?'bank':'international']||0.015
+  const fee=amt*rate
+  const net=amt-fee
+  set('ftw-quote-box',`$${fmtNum(amt)} USDC → $${fmtNum(net)} net (${(rate*100).toFixed(2)}% fee = $${fmtNum(fee)})`)
+}
+
+async function doFTW(){
+  const amt=parseFloat(el('ftw-amt')?.value)
+  if(!amt||amt<=0){showRes('ftw-res','Enter a valid USDC amount',false);return}
+  const params={amount:amt,type:_ftwType}
+  if(_ftwType==='mobile')params.phone=v('ftw-ph')
+  else if(_ftwType==='bank'){params.accountName=v('ftw-bn');params.accountNumber=v('ftw-bac')}
+  else{params.accountName=v('ftw-in');params.accountNumber=v('ftw-iac');params.swiftCode=v('ftw-sw')}
+  try{
+    const r=await fetch('/api/ftw/withdraw',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(params)})
+    const d=await r.json()
+    showRes('ftw-res',d.ok?`Sent $${fmtNum(d.net)} net | ref: ${d.reference}`:d.error,d.ok)
+  }catch(e){showRes('ftw-res',e.message,false)}
+}
+
+// Helpers
 function set(id,val){const e=document.getElementById(id);if(e)e.innerHTML=val}
 function el(id){return document.getElementById(id)}
-function fmt(n){if(!n||isNaN(n))return'0';return Number(n).toLocaleString('en-US',{maximumFractionDigits:2})}
-function fmtBig(n){
+function v(id){return el(id)?.value||''}
+function showRes(id,msg,ok){const e=el(id);if(!e)return;e.style.display='block';e.textContent=msg;e.className='res-box '+(ok?'res-ok':'res-err')}
+function fmtNum(n){if(!n||isNaN(n))return'0';return Number(n).toLocaleString('en-US',{maximumFractionDigits:2})}
+function fmtB(n){
   if(!n||isNaN(n))return'$0'
   const x=Number(n)
-  if(x>=1e18)return'$'+(x/1e18).toFixed(4)+' QUI'
+  if(x>=1e18)return'$'+(x/1e18).toFixed(2)+'QUI'
   if(x>=1e15)return'$'+(x/1e15).toFixed(2)+'Q'
   if(x>=1e12)return'$'+(x/1e12).toFixed(2)+'T'
   if(x>=1e9) return'$'+(x/1e9).toFixed(2)+'B'
