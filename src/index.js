@@ -1,6 +1,5 @@
 // src/index.js — Halcan boot
-// $70B flash capacity | $7B per cycle | P1-P10 propeller
-// Shared treasury: 0xCCCF... (classified)
+// $70B flash | $7B per cycle | P1-P10 propeller | shared treasury
 
 import { createServer }  from 'http'
 import { Worker }        from 'worker_threads'
@@ -26,18 +25,18 @@ HOT[H.AAVE_CAP]     = AAVE_FLASH
 HOT[H.GAS_OK]       = 1
 HOT[H.PROPELLER]    = 1
 
-const bf  = (BALANCER_FLASH / 1e9).toFixed(0)
-const af  = (AAVE_FLASH     / 1e9).toFixed(0)
-const tf  = (TOTAL_FLASH    / 1e9).toFixed(0)
-const pct = (PER_CYCLE_TARGET / 1e9).toFixed(0)
+const bf  = Math.floor(BALANCER_FLASH / 1e9)
+const af  = Math.floor(AAVE_FLASH     / 1e9)
+const tf  = Math.floor(TOTAL_FLASH    / 1e9)
+const pct = Math.floor(PER_CYCLE_TARGET / 1e9)
 
 console.log('╔═══════════════════════════════════════════════════════════╗')
 console.log('║   H A L C A N  —  Flash Principal Extraction System       ║')
-console.log(`║   Version: ${VERSION}  |  $${tf}B Flash  |  $${pct}B/cycle              ║`)
+console.log(`║   Version: ${VERSION}  |  $${tf}B Flash  |  $${pct}B/cycle                   ║`)
 console.log(`║   Executor: ${EXECUTOR.slice(0,14)}...                              ║`)
 console.log('║   Treasury: SECURED (CLASSIFIED)                          ║')
-console.log(`║   Flash:    $${bf}B Balancer + $${af}B Aave = $${tf}B total       ║`)
-console.log(`║   Target:   $${pct}B per cycle | 1.7M cycles/day max               ║`)
+console.log(`║   Balancer: $${bf}B (0% fee)  |  Aave: $${af}B (0.05% fee)       ║`)
+console.log(`║   Target:   $${pct}B per cycle  |  1.7M cycles/day max            ║`)
 console.log('╚═══════════════════════════════════════════════════════════╝')
 
 // Start core services
@@ -49,45 +48,57 @@ startDashboard(SAB)
 
 // Chain monitor worker
 const __dir = path.dirname(fileURLToPath(import.meta.url))
+
 const chainWorker = new Worker(path.join(__dir, 'chains.js'), { workerData: { SAB } })
 chainWorker.on('message', msg => {
   if (msg.type === 'swap') HOT[H.NATURAL_TODAY]++
 })
-chainWorker.on('error', e => console.log(`[CHAINS] Worker error: ${e.message?.slice(0,80)}`))
+chainWorker.on('error',   e => console.log(`[CHAINS] ${e.message?.slice(0,80)}`))
+chainWorker.on('exit',    c => { if (c !== 0) console.log(`[CHAINS] Worker exited: ${c}`) })
 
 // Executor worker
 const execWorker = new Worker(path.join(__dir, 'executor.js'), { workerData: { SAB } })
 execWorker.on('message', msg => {
   if (msg.type === 'cycle') {
-    HOT[H.REV_TODAY]    = (HOT[H.REV_TODAY]    || 0) + (msg.extracted || PER_CYCLE_TARGET)
-    HOT[H.REV_TOTAL]    = (HOT[H.REV_TOTAL]    || 0) + (msg.extracted || PER_CYCLE_TARGET)
+    const extracted = msg.extracted || PER_CYCLE_TARGET
+    HOT[H.REV_TODAY]    = (HOT[H.REV_TODAY]    || 0) + extracted
+    HOT[H.REV_TOTAL]    = (HOT[H.REV_TOTAL]    || 0) + extracted
     HOT[H.CYCLES_TODAY] = (HOT[H.CYCLES_TODAY]  || 0) + 1
     HOT[H.CYCLES_TOTAL] = (HOT[H.CYCLES_TOTAL]  || 0) + 1
+    HOT[H.PER_CYCLE]    = extracted
+    if (extracted > (HOT[H.PEAK_CYCLE] || 0)) HOT[H.PEAK_CYCLE] = extracted
+    const c = HOT[H.CYCLES_TODAY] || 1
+    HOT[H.AVG_CYCLE] = HOT[H.REV_TODAY] / c
   }
 })
-execWorker.on('error', e => console.log(`[EXECUTOR] Worker error: ${e.message?.slice(0,80)}`))
+execWorker.on('error', e => console.log(`[EXECUTOR] ${e.message?.slice(0,80)}`))
+execWorker.on('exit',  c => { if (c !== 0) console.log(`[EXECUTOR] Worker exited: ${c}`) })
 
 // Uptime + memory
-setInterval(() => HOT[H.UPTIME]++, 1000)
-HOT[H.MB] = process.memoryUsage().heapUsed / 1024 / 1024 | 0
+setInterval(() => { HOT[H.UPTIME]++ }, 1000)
 setInterval(() => { HOT[H.MB] = process.memoryUsage().heapUsed / 1024 / 1024 | 0 }, 10_000)
 
 // Midnight reset
 const scheduleMidnight = () => {
   const now = new Date(), nx = new Date()
-  nx.setUTCHours(0, 0, 0, 0); nx.setUTCDate(nx.getUTCDate() + 1)
+  nx.setUTCHours(0, 0, 0, 0)
+  nx.setUTCDate(nx.getUTCDate() + 1)
   setTimeout(() => {
-    ;[H.CYCLES_TODAY, H.REV_TODAY, H.NET_TODAY, H.NATURAL_TODAY,
-      H.EXEC_TODAY, H.SUCCESS_TODAY, H.FAIL_TODAY, H.AAVE_FEE_TODAY,
-      H.AVG_CYCLE].forEach(i => HOT[i] = 0)
+    ;[
+      H.CYCLES_TODAY, H.REV_TODAY,   H.NET_TODAY,
+      H.NATURAL_TODAY, H.EXEC_TODAY,  H.SUCCESS_TODAY,
+      H.FAIL_TODAY,   H.AAVE_FEE_TODAY, H.AVG_CYCLE,
+    ].forEach(i => HOT[i] = 0)
     scheduleMidnight()
   }, nx - now)
 }
 scheduleMidnight()
 
-// Health endpoint
+// Health endpoint — separate port from dashboard
 createServer((req, res) => {
-  if (req.url !== '/ping' && req.url !== '/health') { res.writeHead(404); res.end(); return }
+  if (req.url !== '/ping' && req.url !== '/health') {
+    res.writeHead(404); res.end(); return
+  }
   res.writeHead(200, { 'Content-Type': 'application/json' })
   res.end(JSON.stringify({
     ok:          true,
@@ -97,9 +108,9 @@ createServer((req, res) => {
     revToday:    HOT[H.REV_TODAY],
     flashCap:    HOT[H.FLASH_CAP],
     propeller:   'P' + (HOT[H.PROPELLER] | 0),
-    deployed:    HOT[H.DEPLOYMENT] === 1,
-    gasOK:       HOT[H.GAS_OK] === 1,
-    mb:          HOT[H.MB] | 0,
+    deployed:    HOT[H.DEPLOYMENT]   === 1,
+    gasOK:       HOT[H.GAS_OK]       === 1,
+    mb:          HOT[H.MB]           | 0,
   }))
 }).listen(3001).on('error', () => {})
 
