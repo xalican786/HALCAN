@@ -1,6 +1,6 @@
-// src/dashboard.js — Halcan operator dashboard
-// 5 tabs: Overview | Propeller | Chains | FTW | System
-// FTW: burn USDC profit → ModemPay → fiat withdrawal
+// src/dashboard.js — Halcan 20-tab operator dashboard
+// Obsidian black and white theme
+// FTW: USDC → ModemPay → fiat
 // WebSocket live 500ms updates
 
 import { createRequire }  from 'module'
@@ -18,14 +18,23 @@ import {
   H, PORT, SYSTEM, VERSION, EXECUTOR, SAB_SIZE,
   TOTAL_FLASH, BALANCER_FLASH, AAVE_FLASH,
   PER_CYCLE_TARGET, PROPELLER, CONTRACT,
+  FLASH_ASSETS,
 } from './config.js'
-import { activatePropeller, getPropellerStats, getProgress, getVelocity } from './propeller.js'
-import { getCycleLog }  from './treasury.js'
-import { send as mpSend, calcFee } from './adapters/modempay.js'
+import {
+  activatePropeller, getPropellerStats,
+  getProgress, getVelocity,
+} from './propeller.js'
+import { getCycleLog }                    from './treasury.js'
+import { send as mpSend, calcFee }        from './adapters/modempay.js'
 
 let SAB_REF = null
 const WS_CLIENTS = new Set()
 const hot = () => SAB_REF ? new Float64Array(SAB_REF) : null
+
+// Revenue history for sparkline (last 60 data points)
+const revHistory  = Array(60).fill(0)
+const cycleHistory= Array(60).fill(0)
+let   histTick    = 0
 
 // ── FULL STATE ─────────────────────────────────────────────────────────────────
 function fullState() {
@@ -58,6 +67,7 @@ function fullState() {
     progress:     getProgress(H2),
     // Propeller
     propeller:      'P' + (H2[H.PROPELLER] | 0),
+    propellerNum:   H2[H.PROPELLER] | 0,
     dailyTarget:    H2[H.DAILY_TARGET],
     propellerStats: getPropellerStats(),
     // Chains
@@ -73,12 +83,28 @@ function fullState() {
     uptime:     H2[H.UPTIME]     | 0,
     mb:         H2[H.MB]         | 0,
     executor:   EXECUTOR,
-    halcanAddr: CONTRACT.HALCAN  || '',
-    version:    VERSION,
-    wsClients:  WS_CLIENTS.size,
+    // Contracts
+    halcanAddr:   CONTRACT.HALCAN          || '',
+    flashAddr:    CONTRACT.HALCAN_FLASH    || '',
+    vaultAddr:    CONTRACT.HALCAN_VAULT    || '',
+    splitterAddr: CONTRACT.HALCAN_SPLITTER || '',
+    registryAddr: CONTRACT.HALCAN_REGISTRY || '',
+    // History
+    revHistory,
+    cycleHistory,
+    version:   VERSION,
+    wsClients: WS_CLIENTS.size,
     // TREASURY NEVER INCLUDED
   }
 }
+
+// Update history every 10 seconds
+setInterval(() => {
+  const H2 = hot(); if (!H2) return
+  histTick = (histTick + 1) % 60
+  revHistory[histTick]   = H2[H.REV_TODAY]   || 0
+  cycleHistory[histTick] = H2[H.CYCLES_TODAY] || 0
+}, 10_000)
 
 function broadcast(data) {
   const p = JSON.stringify(data)
@@ -86,7 +112,6 @@ function broadcast(data) {
     if (ws.readyState === 1) try { ws.send(p) } catch { WS_CLIENTS.delete(ws) }
   }
 }
-
 setInterval(() => { if (WS_CLIENTS.size > 0) broadcast(fullState()) }, 500)
 
 // ── EXPRESS ───────────────────────────────────────────────────────────────────
@@ -94,7 +119,7 @@ const app = express()
 const srv = createServer(app)
 const wss = new WebSocketServer({ server: srv, perMessageDeflate: false })
 
-app.use(express.json({ limit: '512kb' }))
+app.use(express.json({ limit: '1mb' }))
 app.use(express.static(path.join(__dir, '../dashboard')))
 
 app.get('/', (_, res) => {
@@ -104,21 +129,17 @@ app.get('/', (_, res) => {
 
 app.get('/ping', (_, res) => {
   const H2 = hot()
-  res.json({
-    ok:      true,
-    system:  SYSTEM,
-    uptime:  H2?.[H.UPTIME] | 0,
-    deployed:H2?.[H.DEPLOYMENT] === 1,
-  })
+  res.json({ ok: true, system: SYSTEM, uptime: H2?.[H.UPTIME]|0, deployed: H2?.[H.DEPLOYMENT]===1 })
 })
 
-// ── STATE ─────────────────────────────────────────────────────────────────────
+// ── API ENDPOINTS ─────────────────────────────────────────────────────────────
 app.get('/api/state',  (_, res) => res.json(fullState()))
-app.get('/api/cycles', (_, res) => {
-  res.json({ cycles: getCycleLog(50), total: hot()?.[H.CYCLES_TOTAL] | 0 })
+app.get('/api/cycles', (req, res) => {
+  const limit = parseInt(req.query.limit) || 100
+  res.json({ cycles: getCycleLog(limit), total: hot()?.[H.CYCLES_TOTAL]|0 })
 })
 
-// ── PROPELLER ─────────────────────────────────────────────────────────────────
+// Propeller control
 app.post('/api/propeller', (req, res) => {
   const { level } = req.body
   const H2 = hot(); if (!H2) return res.status(503).json({ error: 'not ready' })
@@ -126,11 +147,20 @@ app.post('/api/propeller', (req, res) => {
   res.json({ ok, level, target: PROPELLER[level] })
 })
 
-// ── FTW — USDC profit → ModemPay → fiat ──────────────────────────────────────
-// Halcan earns USDC in the treasury from flash extractions.
-// Operator withdraws any amount via ModemPay.
-// Treasury USDC comes from Xalican + Halcan combined revenue.
+// Executor pause/resume
+app.post('/api/executor/pause', (req, res) => {
+  const H2 = hot(); if (!H2) return res.status(503).json({ error: 'not ready' })
+  H2[H.GAS_OK] = 0
+  res.json({ ok: true, status: 'paused' })
+})
 
+app.post('/api/executor/resume', (req, res) => {
+  const H2 = hot(); if (!H2) return res.status(503).json({ error: 'not ready' })
+  H2[H.GAS_OK] = 1
+  res.json({ ok: true, status: 'resumed' })
+})
+
+// FTW — USDC profit withdrawal via ModemPay
 app.post('/api/ftw/quote', (req, res) => {
   const { amount, network } = req.body
   if (!amount) return res.status(400).json({ error: 'amount required' })
@@ -139,27 +169,15 @@ app.post('/api/ftw/quote', (req, res) => {
 })
 
 app.post('/api/ftw/withdraw', async (req, res) => {
-  const {
-    amount, type, phone, accountNumber,
-    accountName, swiftCode, network, address,
-  } = req.body
-
+  const { amount, type, phone, accountNumber, accountName, swiftCode, network, address } = req.body
   if (!amount || amount <= 0) return res.status(400).json({ error: 'amount required' })
-
   const key = process.env.MODEMPAY_SECRET_KEY || ''
-  if (!key) return res.status(400).json({ error: 'MODEMPAY_SECRET_KEY not set in Railway Variables' })
-
+  if (!key) return res.status(400).json({ error: 'MODEMPAY_SECRET_KEY not set' })
   try {
-    const result = await mpSend(key, {
-      type, amount: parseFloat(amount),
-      phone, accountNumber, accountName,
-      swiftCode, network, address,
-    })
+    const result = await mpSend(key, { type, amount: parseFloat(amount), phone, accountNumber, accountName, swiftCode, network, address })
     broadcast({ type: 'ftw', amount })
     res.json({ ok: true, ...result })
-  } catch (e) {
-    res.status(500).json({ error: e.message?.slice(0, 120) })
-  }
+  } catch (e) { res.status(500).json({ error: e.message?.slice(0, 120) }) }
 })
 
 // ── WEBSOCKET ─────────────────────────────────────────────────────────────────
@@ -173,6 +191,6 @@ wss.on('connection', ws => {
 export function startDashboard(SAB) {
   SAB_REF = SAB
   srv.listen(PORT, () => {
-    console.log(`[DASHBOARD] Halcan :${PORT} | 5 tabs | FTW active | /ping`)
+    console.log(`[DASHBOARD] Halcan :${PORT} | 20 tabs | obsidian theme | /ping`)
   })
 }
