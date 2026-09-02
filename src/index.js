@@ -1,13 +1,18 @@
 // src/index.js — Halcan boot
-// $70B flash | $7B per cycle | P1-P10 propeller | shared treasury
+// $70B flash | $7B per cycle | P1-P10 propeller
+// 20 chains for maximum swap detection
+// Shared treasury — classified
+// Fresh executor wallet — separate from treasury
 
 import { createServer }  from 'http'
 import { Worker }        from 'worker_threads'
 import { fileURLToPath } from 'url'
 import path              from 'path'
 import {
-  SAB_SIZE, H, SYSTEM, VERSION, EXECUTOR, PORT,
-  TOTAL_FLASH, BALANCER_FLASH, AAVE_FLASH, PER_CYCLE_TARGET,
+  SAB_SIZE, H, SYSTEM, VERSION,
+  EXECUTOR, TREASURY,
+  PORT, TOTAL_FLASH, BALANCER_FLASH, AAVE_FLASH,
+  PER_CYCLE_TARGET, WS_CHAINS, CHAINS,
 } from './config.js'
 import { startDeployer } from './deployer.js'
 import { startFlash }    from './flash.js'
@@ -25,10 +30,17 @@ HOT[H.AAVE_CAP]     = AAVE_FLASH
 HOT[H.GAS_OK]       = 1
 HOT[H.PROPELLER]    = 1
 
+// Verify executor is not treasury (safety check)
+if (EXECUTOR === TREASURY) {
+  console.error('[HALCAN] FATAL: Executor address equals treasury — check EXECUTOR_PK in config.js')
+  process.exit(1)
+}
+
 const bf  = Math.floor(BALANCER_FLASH / 1e9)
 const af  = Math.floor(AAVE_FLASH     / 1e9)
 const tf  = Math.floor(TOTAL_FLASH    / 1e9)
 const pct = Math.floor(PER_CYCLE_TARGET / 1e9)
+const wsc = WS_CHAINS.length
 
 console.log('╔═══════════════════════════════════════════════════════════╗')
 console.log('║   H A L C A N  —  Flash Principal Extraction System       ║')
@@ -37,6 +49,7 @@ console.log(`║   Executor: ${EXECUTOR.slice(0,14)}...                         
 console.log('║   Treasury: SECURED (CLASSIFIED)                          ║')
 console.log(`║   Balancer: $${bf}B (0% fee)  |  Aave: $${af}B (0.05% fee)       ║`)
 console.log(`║   Target:   $${pct}B per cycle  |  1.7M cycles/day max            ║`)
+console.log(`║   Chains:   ${wsc} WS chains monitoring swaps                    ║`)
 console.log('╚═══════════════════════════════════════════════════════════╝')
 
 // Start core services
@@ -46,17 +59,19 @@ startPropeller(HOT)
 startTreasury(HOT)
 startDashboard(SAB)
 
-// Chain monitor worker
+// ── CHAIN MONITOR WORKER ──────────────────────────────────────────────────────
 const __dir = path.dirname(fileURLToPath(import.meta.url))
 
 const chainWorker = new Worker(path.join(__dir, 'chains.js'), { workerData: { SAB } })
 chainWorker.on('message', msg => {
-  if (msg.type === 'swap') HOT[H.NATURAL_TODAY]++
+  if (msg.type === 'swap') {
+    HOT[H.NATURAL_TODAY] = (HOT[H.NATURAL_TODAY] || 0) + 1
+  }
 })
-chainWorker.on('error',   e => console.log(`[CHAINS] ${e.message?.slice(0,80)}`))
+chainWorker.on('error',   e => console.log(`[CHAINS] Worker error: ${e.message?.slice(0,80)}`))
 chainWorker.on('exit',    c => { if (c !== 0) console.log(`[CHAINS] Worker exited: ${c}`) })
 
-// Executor worker
+// ── EXECUTOR WORKER ───────────────────────────────────────────────────────────
 const execWorker = new Worker(path.join(__dir, 'executor.js'), { workerData: { SAB } })
 execWorker.on('message', msg => {
   if (msg.type === 'cycle') {
@@ -69,12 +84,14 @@ execWorker.on('message', msg => {
     if (extracted > (HOT[H.PEAK_CYCLE] || 0)) HOT[H.PEAK_CYCLE] = extracted
     const c = HOT[H.CYCLES_TODAY] || 1
     HOT[H.AVG_CYCLE] = HOT[H.REV_TODAY] / c
+    // Net after Aave fee
+    HOT[H.NET_TODAY] = (HOT[H.REV_TODAY] || 0) - (HOT[H.AAVE_FEE_TODAY] || 0)
   }
 })
-execWorker.on('error', e => console.log(`[EXECUTOR] ${e.message?.slice(0,80)}`))
+execWorker.on('error', e => console.log(`[EXECUTOR] Worker error: ${e.message?.slice(0,80)}`))
 execWorker.on('exit',  c => { if (c !== 0) console.log(`[EXECUTOR] Worker exited: ${c}`) })
 
-// Uptime + memory
+// ── TIMERS ────────────────────────────────────────────────────────────────────
 setInterval(() => { HOT[H.UPTIME]++ }, 1000)
 setInterval(() => { HOT[H.MB] = process.memoryUsage().heapUsed / 1024 / 1024 | 0 }, 10_000)
 
@@ -87,14 +104,14 @@ const scheduleMidnight = () => {
     ;[
       H.CYCLES_TODAY, H.REV_TODAY,   H.NET_TODAY,
       H.NATURAL_TODAY, H.EXEC_TODAY,  H.SUCCESS_TODAY,
-      H.FAIL_TODAY,   H.AAVE_FEE_TODAY, H.AVG_CYCLE,
+      H.FAIL_TODAY,    H.AAVE_FEE_TODAY, H.AVG_CYCLE,
     ].forEach(i => HOT[i] = 0)
     scheduleMidnight()
   }, nx - now)
 }
 scheduleMidnight()
 
-// Health endpoint — separate port from dashboard
+// ── HEALTH ENDPOINT ───────────────────────────────────────────────────────────
 createServer((req, res) => {
   if (req.url !== '/ping' && req.url !== '/health') {
     res.writeHead(404); res.end(); return
@@ -103,14 +120,16 @@ createServer((req, res) => {
   res.end(JSON.stringify({
     ok:          true,
     system:      SYSTEM,
-    uptime:      HOT[H.UPTIME]       | 0,
-    cyclesTotal: HOT[H.CYCLES_TOTAL] | 0,
+    uptime:      HOT[H.UPTIME]        | 0,
+    cyclesTotal: HOT[H.CYCLES_TOTAL]  | 0,
     revToday:    HOT[H.REV_TODAY],
     flashCap:    HOT[H.FLASH_CAP],
     propeller:   'P' + (HOT[H.PROPELLER] | 0),
-    deployed:    HOT[H.DEPLOYMENT]   === 1,
-    gasOK:       HOT[H.GAS_OK]       === 1,
-    mb:          HOT[H.MB]           | 0,
+    chains:      HOT[H.CHAIN_COUNT]   | 0,
+    deployed:    HOT[H.DEPLOYMENT]    === 1,
+    gasOK:       HOT[H.GAS_OK]        === 1,
+    executor:    EXECUTOR,
+    mb:          HOT[H.MB]            | 0,
   }))
 }).listen(3001).on('error', () => {})
 
@@ -118,4 +137,5 @@ process.on('uncaughtException',  e => console.log(`[HALCAN] ${e.message?.slice(0
 process.on('unhandledRejection', r => console.log(`[HALCAN] ${String(r).slice(0,100)}`))
 process.on('SIGTERM',            () => process.exit(0))
 
-console.log(`[HALCAN] Operational :${PORT} | Send 0.1 POL to ${EXECUTOR.slice(0,14)}... to deploy`)
+console.log(`[HALCAN] Executor: ${EXECUTOR}`)
+console.log(`[HALCAN] Send 0.1 POL to above address to deploy | ${wsc} chains monitoring`)
