@@ -1,115 +1,20 @@
-// src/log.js — VANCAN diagnostics
-// 5 logs per minute (every 12s)
-// Starts 15s after boot — after boot logs complete
-// NO dynamic imports — all imports at top level
-// NO await outside async functions
+// src/log.js -- HALCAN diagnostics
+// 5 logs per minute | starts 15s after boot
+// HALCAN uses H object -- reads flash caps, propeller, cycles, revenue
+// Shows live flash (from algorithm.js) vs configured flash
 
-import { existsSync, readFileSync } from 'fs'
-import { ethers }  from 'ethers'
-import {
-  H, SYSTEM, VERSION, EXECUTOR,
-  CONTRACT, CHAINS, CHAIN_HOT,
-  BASE_FLASH, AMPLIFIER_OUTPUT, PROPELLER,
-  ACTIVE_PROPELLER,
-} from './config.js'
-import { amplify, layerBreakdown } from './amplifier.js'
-
-const ADDR_PATH = '/data/vancan_contracts.json'
-const SEP       = '─'.repeat(60)
+const SEP       = '-'.repeat(60)
 let   diagCount = 0
 let   diagTimer = null
 
-// ── MEMORY ────────────────────────────────────────────────────────────────────
-function memDiag() {
-  const m      = process.memoryUsage()
-  const heapMB = Math.round(m.heapUsed  / 1024 / 1024)
-  const totMB  = Math.round(m.heapTotal / 1024 / 1024)
-  const rssMB  = Math.round(m.rss       / 1024 / 1024)
-  const pct    = Math.round(heapMB / totMB * 100)
-  const status = pct > 85 ? ' HIGH' : pct > 70 ? '~ MOD' : '✓ OK'
-  return { heapMB, totMB, rssMB, pct, status, warn: pct > 85 }
-}
-
-// ── CONTRACTS ─────────────────────────────────────────────────────────────────
-function contractDiag() {
-  const names = [
-    ['Vancan',           CONTRACT.VANCAN],
-    ['VancanAmplifier',  CONTRACT.VANCAN_AMPLIFIER],
-    ['VancanFlash',      CONTRACT.VANCAN_FLASH],
-    ['VancanBundle',     CONTRACT.VANCAN_BUNDLE],
-    ['VancanGuard',      CONTRACT.VANCAN_GUARD],
-    ['VancanSplitter',   CONTRACT.VANCAN_SPLITTER],
-    ['VancanRegistry',   CONTRACT.VANCAN_REGISTRY],
-    ['VancanVault',      CONTRACT.VANCAN_VAULT],
-    ['VancanGovernance', CONTRACT.VANCAN_GOVERNANCE],
-    ['VancanOracle',     CONTRACT.VANCAN_ORACLE],
-  ]
-  let deployed = 0
-  const missing = []
-  for (const [name, addr] of names) {
-    if (addr && ethers.isAddress(addr)) deployed++
-    else missing.push(name)
-  }
-  let savedAt = null
-  try {
-    if (existsSync(ADDR_PATH)) {
-      const d = JSON.parse(readFileSync(ADDR_PATH, 'utf8'))
-      if (d.deployedAt) savedAt = new Date(d.deployedAt).toLocaleTimeString()
-    }
-  } catch {}
-  return { deployed, total: 10, missing, savedAt }
-}
-
-// ── CHAINS ────────────────────────────────────────────────────────────────────
-function chainDiag(HOT) {
-  const on  = []
-  const off = []
-  for (const c of CHAINS) {
-    const slot = CHAIN_HOT[c.name]
-    if (slot !== undefined && HOT[slot] === 1) on.push(c.name)
-    else off.push(c.name)
-  }
-  return { on, off, total: CHAINS.length }
-}
-
-// ── AMPLIFIER ─────────────────────────────────────────────────────────────────
-function ampDiag() {
-  // No await — synchronous amplify call
-  try {
-    const r = amplify()
-    return { ok:true, output:r.output, elapsed:r.elapsed_ms }
-  } catch (e) {
-    return { ok:false, error:e.message?.slice(0,60) }
-  }
-}
-
-// ── EXECUTOR ──────────────────────────────────────────────────────────────────
-function execDiag(HOT) {
-  const swaps   = HOT[H.SWAPS_TODAY]   | 0
-  const success = HOT[H.SUCCESS_TODAY] | 0
-  const fail    = HOT[H.FAIL_TODAY]    | 0
-  const rate    = swaps > 0 ? Math.round(success / swaps * 100) : 0
-  return {
-    gasPrice:   HOT[H.GAS_PRICE] || 0,
-    gasOK:      HOT[H.GAS_OK] === 1,
-    swaps, success, fail, rate,
-    speedMs:    HOT[H.EXEC_SPEED_MS] || 0,
-    revToday:   HOT[H.REV_TODAY]     || 0,
-    netToday:   HOT[H.NET_TODAY]     || 0,
-    revTotal:   HOT[H.REV_TOTAL]     || 0,
-    naturalToday: HOT[H.NATURAL_TODAY] | 0,
-  }
-}
-
-// ── FORMAT ────────────────────────────────────────────────────────────────────
 function fB(n) {
   if (!n || isNaN(n) || n === 0) return '$0'
   const x = Number(n)
-  if (x >= 1e18) return '$' + (x/1e18).toFixed(2) + 'QUI'
   if (x >= 1e15) return '$' + (x/1e15).toFixed(2) + 'Q'
   if (x >= 1e12) return '$' + (x/1e12).toFixed(2) + 'T'
   if (x >= 1e9)  return '$' + (x/1e9).toFixed(2)  + 'B'
   if (x >= 1e6)  return '$' + (x/1e6).toFixed(2)  + 'M'
+  if (x >= 1e3)  return '$' + (x/1e3).toFixed(1)  + 'K'
   return '$' + x.toFixed(2)
 }
 
@@ -120,99 +25,126 @@ function fmtTime(s) {
   return (s/3600|0) + 'h ' + (s%3600/60|0) + 'm'
 }
 
-// ── MAIN DIAGNOSTIC ───────────────────────────────────────────────────────────
-function runDiag(HOT) {
-  diagCount++
-  const time   = new Date().toISOString().slice(11,19)
-  const uptime = HOT[H.UPTIME] | 0
-  const mem    = memDiag()
-  const ctrs   = contractDiag()
-  const chains = chainDiag(HOT)
-  const amp    = ampDiag()
-  const exec   = execDiag(HOT)
-  const prop   = 'P' + (HOT[H.PROPELLER] | 0)
-  const target = HOT[H.DAILY_TARGET] || 0
-  const natPM  = uptime > 60 ? Math.round(exec.naturalToday / (uptime/60)) : exec.naturalToday
+function memDiag() {
+  const m    = process.memoryUsage()
+  const heap = Math.round(m.heapUsed  / 1024 / 1024)
+  const tot  = Math.round(m.heapTotal / 1024 / 1024)
+  const rss  = Math.round(m.rss       / 1024 / 1024)
+  const pct  = Math.round(heap / tot  * 100)
+  const status = pct > 85 ? 'WARNING' : pct > 70 ? 'MODERATE' : 'OK'
+  return { heap, tot, rss, pct, status, warn: pct > 85 }
+}
 
-  console.log(`\n[DIAG #${diagCount}] ${SYSTEM} ${VERSION} | ${time} | up: ${fmtTime(uptime)}`)
+function runDiag(HOT, H) {
+  diagCount++
+  const time = new Date().toISOString().slice(11, 19)
+  const mem  = memDiag()
+
+  // HOT reads -- all via H object
+  const uptime     = HOT[H.UPTIME]       | 0
+  const propeller  = HOT[H.PROPELLER]    | 0
+  const flashCap   = HOT[H.FLASH_CAP]    || 0
+  const balancerC  = HOT[H.BALANCER_CAP] || 0
+  const aaveC      = HOT[H.AAVE_CAP]     || 0
+  const gasOK      = HOT[H.GAS_OK]      === 1
+  const deployment = HOT[H.DEPLOYMENT]  === 1
+  const revToday   = HOT[H.REV_TODAY]    || 0
+  const revTotal   = HOT[H.REV_TOTAL]    || 0
+  const cyclesToday= HOT[H.CYCLES_TODAY] | 0
+  const natToday   = HOT[H.NATURAL_TODAY]| 0
+  const chainCount = HOT[H.CHAIN_COUNT]  | 0
+  const perCycle   = HOT[H.PER_CYCLE]    || 0
+  const peakCycle  = HOT[H.PEAK_CYCLE]   || 0
+  const gasPrice   = HOT[H.GAS_PRICE]    || 0
+  const mb         = HOT[H.MB]           | 0
+
+  // Algorithm check results (populated after first cycle)
+  const algoPass  = HOT[H.ALGO_PASS]    === 1
+  const algoFlash = HOT[H.ALGO_FLASH]   || 0
+  const algoTs    = HOT[H.ALGO_LAST_TS] || 0
+  const hasAlgo   = algoTs > 0
+
+  const deployed = deployment
+
+  console.log(`\n[DIAG #${diagCount}] HALCAN | ${time} | up: ${fmtTime(uptime)}`)
   console.log(SEP)
 
   // 1. MEMORY
+  const memNote = mem.warn ? ' | WARNING: near Railway limit' : ''
   console.log(
-    `[MEM]  ${mem.heapMB}MB/${mem.totMB}MB heap (${mem.pct}%) ${mem.status}` +
-    ` | rss: ${mem.rssMB}MB` +
-    (mem.warn ? ' NEAR LIMIT — Railway may restart' : '')
+    `[MEM]  ${mem.heap}MB/${mem.tot}MB heap (${mem.pct}%) ${mem.status}` +
+    ` | rss: ${mem.rss}MB${memNote}`
   )
 
   // 2. CONTRACTS
-  if (ctrs.deployed === ctrs.total) {
-    console.log(`[CTRS] ✓ ALL ${ctrs.total}/10 deployed${ctrs.savedAt ? ' (saved '+ctrs.savedAt+')' : ''}`)
-  } else if (ctrs.deployed > 0) {
-    console.log(`[CTRS] ${ctrs.deployed}/10 deployed | Missing: ${ctrs.missing.join(', ')}`)
+  if (deployed) {
+    console.log(`[CTRS] Deployed`)
   } else {
-    console.log(`[CTRS]  Awaiting 0.1 POL → ${EXECUTOR.slice(0,14)}... | 0/10 deployed`)
+    const exec = process.env.EXECUTOR || 'check config.js'
+    console.log(`[CTRS] 0 contracts | Awaiting 0.1 POL at ${exec.slice(0, 14)}...`)
   }
 
   // 3. CHAINS
-  if (chains.off.length === 0) {
-    console.log(`[CHN]  ✓ ALL ${chains.total}/20 connected`)
+  console.log(`[CHN]  ${chainCount}/20 connected`)
+
+  // 4. LIVE FLASH -- the critical comparison
+  if (hasAlgo) {
+    // Show live (from algorithm.js) vs what's in HOT caps
+    const algoStatus = !deployed
+      ? 'PENDING DEPLOYMENT'
+      : algoPass ? 'ALL PASS' : 'SOME FAIL'
+    console.log(
+      `[ALGO] ${algoStatus} | Live flash: ${fB(algoFlash)} | ` +
+      `HOT caps: Balancer ${fB(balancerC)} + Aave ${fB(aaveC)} = ${fB(flashCap)}`
+    )
   } else {
     console.log(
-      `[CHN]  ${chains.on.length}/20 connected` +
-      (chains.off.length > 0 && chains.off.length < 6
-        ? ` | offline: ${chains.off.join(',')}` : '')
+      `[FLASH] Cap: ${fB(flashCap)} | Balancer: ${fB(balancerC)} | Aave: ${fB(aaveC)}` +
+      ` | Algorithm not yet run`
     )
   }
 
-  // 4. AMPLIFIER
-  if (amp.ok) {
-    console.log(
-      `[AMP]  ✓ output: ${fB(amp.output)} per swap | ${amp.elapsed.toFixed(4)}ms compute | 15 layers`
-    )
-  } else {
-    console.log(`[AMP]   ERROR: ${amp.error}`)
-  }
+  // 5. REVENUE
+  console.log(
+    `[REV]  Today: ${fB(revToday)} | All-time: ${fB(revTotal)} | Per cycle: ${fB(perCycle)}`
+  )
 
-  // 5. EXECUTOR + REVENUE
-  const gasStr = exec.gasOK
-    ? `✓ ${exec.gasPrice.toFixed(1)} gwei`
-    : ` PAUSED ${exec.gasPrice.toFixed(1)} gwei > 1000 cap`
+  // 6. CYCLES + PROPELLER
+  const gasStr = gasOK
+    ? `${gasPrice > 0 ? gasPrice.toFixed(1) : '-'} gwei (OK)`
+    : `${gasPrice > 0 ? gasPrice.toFixed(1) : '-'} gwei (PAUSED)`
   console.log(
-    `[EXEC] gas: ${gasStr} | swaps: ${exec.swaps} | ` +
-    `success: ${exec.success} (${exec.rate}%) | fail: ${exec.fail} | ` +
-    `speed: ${exec.speedMs.toFixed(1)}ms`
+    `[PROP] P${propeller} | Cycles: ${cyclesToday.toLocaleString()} | ` +
+    `Detected: ${natToday.toLocaleString()} | Gas: ${gasStr}`
   )
-  console.log(
-    `[REV]  today: ${fB(exec.revToday)} | net: ${fB(exec.netToday)} | ` +
-    `all-time: ${fB(exec.revTotal)}`
-  )
-  console.log(
-    `[PROP] ${prop} | target: ${fB(target)}/day | ` +
-    `detected: ${exec.naturalToday.toLocaleString()} swaps (${natPM}/min)`
-  )
+  console.log(`[PEAK] ${fB(peakCycle)} per cycle`)
 
   // WARNINGS
-  if (!exec.gasOK) {
-    console.log(`[WARNING]   Executor PAUSED — gas ${exec.gasPrice.toFixed(1)} gwei exceeds cap`)
+  if (mem.warn) {
+    console.log('[WARNING] Memory above 85% -- Railway may restart')
   }
-  if (exec.naturalToday > 100 && exec.swaps === 0 && ctrs.deployed === 0) {
-    console.log(`[WARNING]   ${exec.naturalToday} swaps detected but 0 executed — contracts not deployed yet`)
+  if (!deployed) {
+    console.log('[WARNING] Contracts not deployed -- send 0.1 POL to executor')
   }
-  if (exec.naturalToday > 0 && exec.swaps === 0 && ctrs.deployed > 0) {
-    console.log(`[WARNING]   Swaps detected but not executing — check CONTRACT.VANCAN address`)
+  if (!gasOK) {
+    console.log(`[WARNING] Gas exceeds 1000 gwei cap -- executor paused`)
+  }
+  if (hasAlgo && !algoPass && deployed) {
+    console.log('[WARNING] Algorithm check failing -- review live flash conditions')
+  }
+  if (natToday > 500 && cyclesToday === 0 && deployed) {
+    console.log('[WARNING] Swaps detected but 0 cycles -- check executor')
   }
 
   console.log(SEP)
 }
 
-// ── START ─────────────────────────────────────────────────────────────────────
-export function startLogger(HOT) {
-  console.log('[LOG] Diagnostics starting in 15s')
-
+export function startLogger(HOT, H) {
+  console.log('[LOG] HALCAN diagnostics starting in 15s')
   setTimeout(() => {
-    console.log(`\n[LOG] Diagnostic system active | 5/min | ${SYSTEM} ${VERSION}`)
-    runDiag(HOT)
-    diagTimer = setInterval(() => runDiag(HOT), 12_000)
+    console.log('\n[LOG] Diagnostic system active | 5/min | HALCAN')
+    runDiag(HOT, H)
+    diagTimer = setInterval(() => runDiag(HOT, H), 12_000)
   }, 15_000)
 }
 
